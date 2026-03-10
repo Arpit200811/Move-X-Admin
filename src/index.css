@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #2563EB;
+  --color-secondary: #22C55E; /* Updated from :root */
+  --color-accent: #F1F5F9; /* Updated from :root */
+  --color-success: #10B981;
+  --color-error: #EF4444;
+  --color-warning: #F59E0B;
+  --color-background: #F8FAFC; /* Updated from :root */
+  --color-foreground: #0F172A; /* Updated from :root */
+  --color-muted: #64748B; /* Updated from :root */
+  --color-muted-foreground: #94A3B8; /* New from :root */
+  --color-accent-foreground: #0F172A; /* New from :root */
+  --color-destructive: #EF4444; /* New from :root */
+  --color-destructive-foreground: #FFFFFF; /* New from :root */
+  --color-border: #E2E8F0; /* Updated from :root */
+  --color-input: #E2E8F0; /* New from :root */
+  --color-ring: #2563EB; /* Updated from :root */
+
+  --radius-sm: 0.25rem; /* New from instruction */
+  --radius-md: 0.5rem; /* New from instruction */
+  --radius-lg: 0.75rem; /* New from instruction, matches :root --radius */
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+  --radius-4xl: 2.5rem;
+
+  --font-inter: "Inter", sans-serif;
+
+  --animate-spin-slow: spin 8s linear infinite;
+  --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+  /* Custom Premium Shadows */
+  --shadow-premium: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-glow-blue: 0 0 20px rgba(37, 99, 235, 0.2);
+  --shadow-glow-green: 0 0 20px rgba(16, 185, 129, 0.2);
+}
+
+:root {
+  font-family: var(--font-inter); 
+  scroll-behavior: smooth;
+}
+
+@layer base {
+  *, ::after, ::before, ::backdrop {
+    border-color: var(--color-border); /* Fixed @apply warning, using @theme variable */
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    background-color: var(--color-background); /* Fixed @apply warning, using @theme variable */
+    color: var(--color-foreground); /* Fixed @apply warning, using @theme variable */
+    -webkit-font-smoothing: antialiased; /* Replaced antialiased with direct CSS */
+    -moz-osx-font-smoothing: grayscale; /* Added for cross-browser antialiasing */
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+@layer utilities {
+  .animate-spin-slow {
+    animation: var(--animate-spin-slow);
+  }
+}
+
+/* Custom Utilities for Modern Look */
+.card-shadow {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+.card-shadow-hover {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-shadow-hover:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+.glass-ultra {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-dark {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.premium-gradient {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+.text-gradient {
+  background: linear-gradient(to right, #2563eb, #10b981);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.premium-border {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.grid-pattern {
+  background-image: radial-gradient(#e2e8f0 0.5px, transparent 0.5px);
+  background-size: 20px 20px;
+}
+
+.shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+[data-radius="premium"] {
+  border-radius: 2.5rem;
+}
