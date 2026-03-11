@@ -13,11 +13,10 @@ import { useOrders } from '../context/OrderContext';
 const loginSchema = yup.object().shape({
     email: yup.string()
         .required('Phone number is required')
-        .min(10, 'Phone must be at least 10 digits')
-        .matches(/^\+?[1-9]\d{1,14}$/, 'Invalid phone format'),
+        .matches(/^[0-9+\-\s]{10,15}$/, 'Enter a valid phone number (10 digits)'),
     password: yup.string()
         .required('Password is required')
-        .min(6, 'Password must be at least 6 characters')
+        .min(4, 'Password must be at least 4 characters')
 });
 
 const Login = () => {
@@ -35,19 +34,23 @@ const Login = () => {
 
     const handleLogin = async (data) => {
         setLoading(true);
+        try {
+            const result = await loginUser(data.email.trim(), data.password, role);
 
-        const result = await loginUser(data.email, data.password, role);
-
-        if (result === true) {
-            toast.success(`Logged in successfully as ${role}!`);
-            if (role === 'partner') {
-                navigate('/partner');
+            if (result === true) {
+                toast.success(`Logged in successfully as ${role}!`);
+                if (role === 'partner') {
+                    navigate('/partner');
+                } else {
+                    navigate('/dashboard');
+                }
             } else {
-                navigate('/dashboard');
+                const msg = result?.message || `Login failed. Check credentials and try again.`;
+                toast.error(msg);
+                setLoading(false);
             }
-        } else {
-            const msg = result?.message || `Invalid credentials. Please verify your ${role} access.`;
-            toast.error(msg);
+        } catch (err) {
+            toast.error('Network error. Please check your connection.');
             setLoading(false);
         }
     };
