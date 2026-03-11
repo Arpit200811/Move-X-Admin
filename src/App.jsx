@@ -1,5 +1,4 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { OrderProvider, useOrders } from './context/OrderContext';
 import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
@@ -11,7 +10,7 @@ import './App.css';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, loading, currentUser } = useOrders();
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading MoveX Intelligence...</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-900 text-indigo-400 font-mono">Initializing MoveX Security Protocol...</div>;
   
   const token = localStorage.getItem('movex_token');
   if (!isAuthenticated && !token) return <Navigate to="/login" replace />;

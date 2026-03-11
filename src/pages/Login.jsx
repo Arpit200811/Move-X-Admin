@@ -33,24 +33,41 @@ const Login = () => {
     });
 
     const handleLogin = async (data) => {
+        console.log('[MoveX] Login Attempt Start:', { role, phone: data.email });
         setLoading(true);
         try {
-            const result = await loginUser(data.email.trim(), data.password, role);
+            const phoneStr = (data.email || '').trim();
+            if (!phoneStr) {
+                toast.error('Identity key required.');
+                setLoading(false);
+                return;
+            }
+
+            const result = await loginUser(phoneStr, data.password, role);
+            console.log('[MoveX] Login Response:', result);
 
             if (result === true) {
-                toast.success(`Logged in successfully as ${role}!`);
-                if (role === 'partner') {
-                    navigate('/partner');
-                } else {
-                    navigate('/dashboard');
-                }
+                toast.success(`Access Granted: ${role.toUpperCase()} session active.`);
+                // Small delay to ensure token is saved to localStorage
+                setTimeout(() => {
+                    if (role === 'partner') {
+                        navigate('/partner');
+                    } else {
+                        navigate('/dashboard');
+                    }
+                }, 500);
             } else {
-                const msg = result?.message || `Login failed. Check credentials and try again.`;
+                const msg = result?.message || `Identity Verification Failed: Access Locked.`;
                 toast.error(msg);
+                // Fallback alert for debugging mobile/old browsers where toasts might fail
+                if (!window.toastShown) {
+                   alert(msg);
+                }
                 setLoading(false);
             }
         } catch (err) {
-            toast.error('Network error. Please check your connection.');
+            console.error('[MoveX] Login System Error:', err);
+            toast.error('Logistics Uplink Error. Check Network.');
             setLoading(false);
         }
     };
@@ -74,8 +91,8 @@ const Login = () => {
                             MoveX <span className="text-primary italic">Express.</span>
                         </span>
                     </Link>
-                    <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 leading-tight">{t('admin_gateway') || 'Admin Gateway'}</h2>
-                    <p className="text-slate-500 font-medium text-sm mt-2">{t('pro_logistics_portal') || 'Professional Logistics Management Portal'}</p>
+                    <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 leading-tight">{t('admin_gateway', 'Admin Gateway')}</h2>
+                    <p className="text-slate-500 font-medium text-sm mt-2">{t('pro_logistics_portal', 'Professional Logistics Management Portal')}</p>
                 </motion.div>
 
                 <motion.div
