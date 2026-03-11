@@ -3,37 +3,51 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Truck, Smartphone, Lock, ChevronRight, Github, Twitter, Eye, EyeOff, Info, ShieldCheck } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import toast from 'react-hot-toast';
 
 import { useOrders } from '../context/OrderContext';
 
+const loginSchema = yup.object().shape({
+    email: yup.string()
+        .required('Phone number is required')
+        .min(10, 'Phone must be at least 10 digits')
+        .matches(/^\+?[1-9]\d{1,14}$/, 'Invalid phone format'),
+    password: yup.string()
+        .required('Password is required')
+        .min(6, 'Password must be at least 6 characters')
+});
+
 const Login = () => {
     const { t } = useTranslation();
-    const [email, setEmail] = useState('9999999999');
-    const [password, setPassword] = useState('demo123');
-    const [role, setRole] = useState('admin'); // NEW
+    const [role, setRole] = useState('admin');
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
     const { loginUser } = useOrders();
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    
+    const { register, handleSubmit, formState: { errors } } = useForm({
+        resolver: yupResolver(loginSchema),
+        defaultValues: { email: '', password: '' }
+    });
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
+    const handleLogin = async (data) => {
         setLoading(true);
-        setError('');
 
-        const result = await loginUser(email, password, role);
+        const result = await loginUser(data.email, data.password, role);
 
         if (result === true) {
+            toast.success(`Logged in successfully as ${role}!`);
             if (role === 'partner') {
                 navigate('/partner');
             } else {
                 navigate('/dashboard');
             }
         } else {
-            // result is either false or { message: '...' } from backend
             const msg = result?.message || `Invalid credentials. Please verify your ${role} access.`;
-            setError(msg);
+            toast.error(msg);
             setLoading(false);
         }
     };
@@ -41,7 +55,6 @@ const Login = () => {
     return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50 relative overflow-hidden font-sans">
             {/* Dynamic Background */}
-            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/10 blur-[120px] rounded-full -mr-48 -mt-48 transition-all animate-pulse" />
             <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-500/10 blur-[120px] rounded-full -ml-48 -mb-48 transition-all animate-pulse" />
 
             <div className="w-full max-w-[420px] relative z-10">
@@ -85,7 +98,7 @@ const Login = () => {
                         </button>
                     </div>
 
-                    <form onSubmit={handleLogin} className="space-y-6">
+                    <form onSubmit={handleSubmit(handleLogin)} className="space-y-6">
                         {/* Phone Number Field */}
                         <div className="space-y-1.5">
                             <label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">
@@ -97,12 +110,14 @@ const Login = () => {
                                 </div>
                                 <input
                                     type="text"
-                                    className="w-full bg-slate-50 border-slate-200 pl-13 pr-4 py-4 rounded-2xl text-[15px] font-bold text-slate-900 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none"
+                                    className={`w-full bg-slate-50 border-slate-200 pl-13 pr-4 py-4 rounded-2xl text-[15px] font-bold text-slate-900 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none ${errors.email ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20' : ''}`}
                                     placeholder="Enter Phone Number"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    {...register('email')}
                                 />
                             </div>
+                            {errors.email && (
+                                <p className="text-red-500 text-xs font-bold pl-1 mt-1">{errors.email.message}</p>
+                            )}
                         </div>
 
                         {/* Password Field */}
@@ -111,7 +126,7 @@ const Login = () => {
                                 <label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-0">
                                     {t('auth_code') || 'Authentication Code'}
                                 </label>
-                                <button type="button" onClick={() => alert('Contact your system administrator to reset admin credentials.')} className="text-[11px] font-bold text-primary hover:text-primary/80 transition-colors uppercase tracking-wider">
+                                <button type="button" onClick={() => toast('Contact your system administrator to reset credentials.', { icon: 'ℹ️' })} className="text-[11px] font-bold text-primary hover:text-primary/80 transition-colors uppercase tracking-wider">
                                     {t('forgot') || 'Forgot?'}
                                 </button>
                             </div>
@@ -121,10 +136,9 @@ const Login = () => {
                                 </div>
                                 <input
                                     type={showPassword ? "text" : "password"}
-                                    className="w-full bg-slate-50 border-slate-200 pl-13 pr-12 py-4 rounded-2xl text-[15px] font-bold text-slate-900 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none"
+                                    className={`w-full bg-slate-50 border-slate-200 pl-13 pr-12 py-4 rounded-2xl text-[15px] font-bold text-slate-900 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none ${errors.password ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20' : ''}`}
                                     placeholder="••••••••"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    {...register('password')}
                                 />
                                 <button
                                     type="button"
@@ -134,18 +148,10 @@ const Login = () => {
                                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
                             </div>
+                            {errors.password && (
+                                <p className="text-red-500 text-xs font-bold pl-1 mt-1">{errors.password.message}</p>
+                            )}
                         </div>
-
-                        {error && (
-                            <motion.div
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                className="flex items-center gap-3 bg-red-50 text-red-600 p-4 rounded-2xl border border-red-100"
-                            >
-                                <Info size={16} />
-                                <span className="text-xs font-bold leading-tight">{error}</span>
-                            </motion.div>
-                        )}
 
                         <button
                             disabled={loading}
@@ -164,11 +170,11 @@ const Login = () => {
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 mt-6">
-                            <button onClick={() => alert('Twitter SSO is not configured. Use phone + password login.')} className="flex items-center justify-center space-x-2 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl hover:bg-slate-100 hover:border-slate-300 transition-all group">
+                            <button type="button" onClick={() => toast('Twitter SSO is not configured. Use phone + password login.')} className="flex items-center justify-center space-x-2 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl hover:bg-slate-100 hover:border-slate-300 transition-all group">
                                 <Twitter size={18} className="text-[#1DA1F2] group-hover:scale-110 transition-transform" />
                                 <span className="text-[13px] font-black text-slate-700">Twitter</span>
                             </button>
-                            <button onClick={() => alert('GitHub SSO is not configured. Use phone + password login.')} className="flex items-center justify-center space-x-2 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl hover:bg-slate-100 hover:border-slate-300 transition-all group">
+                            <button type="button" onClick={() => toast('GitHub SSO is not configured. Use phone + password login.')} className="flex items-center justify-center space-x-2 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl hover:bg-slate-100 hover:border-slate-300 transition-all group">
                                 <Github size={18} className="text-slate-900 group-hover:scale-110 transition-transform" />
                                 <span className="text-[13px] font-black text-slate-700">GitHub</span>
                             </button>

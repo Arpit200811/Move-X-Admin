@@ -85,7 +85,7 @@ export default function DashboardOverview() {
         };
         fetchStats();
 
-        const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000');
+        const socket = io(import.meta.env.VITE_SOCKET_URL || 'https://move-x-backend.onrender.com');
         socket.on('driver_location_updated', (data) => {
             setDriverLocations(prev => ({
                 ...prev,

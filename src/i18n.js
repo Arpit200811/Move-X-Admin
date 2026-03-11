@@ -4,7 +4,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import HttpBackend from 'i18next-http-backend';
 
 // Use environment variable or default for demo
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'https://move-x-backend.onrender.com/api';
 
 i18n
   .use(HttpBackend)
@@ -13,7 +13,7 @@ i18n
   .init({
     fallbackLng: 'en',
     backend: {
-      loadPath: `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/translations/{{lng}}`,
+      loadPath: `${import.meta.env.VITE_API_URL || 'https://move-x-backend.onrender.com/api'}/translations/{{lng}}`,
     },
     interpolation: {
       escapeValue: false

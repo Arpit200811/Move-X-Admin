@@ -17,18 +17,27 @@ import { Card, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { useTranslation } from 'react-i18next';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import toast from 'react-hot-toast';
+
+const bannerSchema = yup.object().shape({
+    title: yup.string().required('Banner title is required').min(3, 'Title must be at least 3 characters'),
+    imageUrl: yup.string().required('Image URL is required').url('Must be a valid URL'),
+    category: yup.string().required('Category is required'),
+    priority: yup.number().typeError('Priority must be a number').integer('Priority must be an integer').required('Priority is required'),
+    linkTo: yup.string()
+});
 
 export default function BannerManagement() {
     const { t } = useTranslation();
     const [banners, setBanners] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
-    const [formData, setFormData] = useState({
-        title: '',
-        imageUrl: '',
-        linkTo: '',
-        priority: 0,
-        category: 'ALL'
+    const { register, handleSubmit, formState: { errors }, reset } = useForm({
+        resolver: yupResolver(bannerSchema),
+        defaultValues: { title: '', imageUrl: '', linkTo: '', priority: 0, category: 'ALL' }
     });
 
     useEffect(() => {
@@ -47,15 +56,15 @@ export default function BannerManagement() {
         }
     };
 
-    const handleCreate = async (e) => {
-        e.preventDefault();
+    const handleCreate = async (data) => {
         try {
-            await api.post('/banners', formData);
+            await api.post('/banners', data);
             setShowForm(false);
-            setFormData({ title: '', imageUrl: '', linkTo: '', priority: 0, category: 'ALL' });
+            reset();
             fetchBanners();
+            toast.success("Payload Injected successfully!");
         } catch (err) {
-            alert("Protocol failure: Banner upload not authorized.");
+            toast.error("Protocol failure: Banner upload not authorized.");
         }
     };
 
@@ -64,8 +73,9 @@ export default function BannerManagement() {
         try {
             await api.delete(`/banners/${id}`);
             fetchBanners();
+            toast.success("Banner Terminated.");
         } catch (err) {
-            alert("Deletion protocol failed.");
+            toast.error("Deletion protocol failed.");
         }
     };
 
@@ -99,9 +109,9 @@ export default function BannerManagement() {
                     >
                         <Card className="border-none shadow-xl hover:shadow-2xl transition-all bg-white rounded-4xl overflow-hidden group h-full flex flex-col">
                             <div className="aspect-video relative group overflow-hidden bg-slate-100">
-                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent z-10" />
+                                <div className="absolute inset-0 bg-linear-to-t from-slate-900/40 to-transparent z-10" />
                                 <img src={banner.imageUrl} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={banner.title} />
-                                <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+                                <div className="absolute inset-x-0 bottom-0 p-6 bg-linear-to-t from-black/80 to-transparent">
                                     <Badge className="bg-white/20 backdrop-blur-md text-white border-none font-black text-[8px] uppercase tracking-widest px-3 py-1 mb-2">
                                         {banner.category}
                                     </Badge>
@@ -170,51 +180,49 @@ export default function BannerManagement() {
                                     <X size={20} />
                                 </button>
                             </div>
-                            <form onSubmit={handleCreate} className="p-8 space-y-6">
+                            <form onSubmit={handleSubmit(handleCreate)} className="p-8 space-y-6">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Banner Title</label>
                                     <input 
-                                        required
                                         type="text" 
                                         placeholder="Summer Food Fest 2024"
-                                        className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-primary/20 transition-all"
-                                        value={formData.title}
-                                        onChange={e => setFormData({...formData, title: e.target.value})}
+                                        className={`w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-primary/20 transition-all ${errors.title ? 'ring-2 ring-red-400' : ''}`}
+                                        {...register('title')}
                                     />
+                                    {errors.title && <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{errors.title.message}</p>}
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Image CDN URL</label>
                                     <input 
-                                        required
                                         type="url" 
                                         placeholder="https://assets.movex.com/banners/..."
-                                        className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-primary/20 transition-all"
-                                        value={formData.imageUrl}
-                                        onChange={e => setFormData({...formData, imageUrl: e.target.value})}
+                                        className={`w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-primary/20 transition-all ${errors.imageUrl ? 'ring-2 ring-red-400' : ''}`}
+                                        {...register('imageUrl')}
                                     />
+                                    {errors.imageUrl && <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{errors.imageUrl.message}</p>}
                                 </div>
                                 <div className="grid grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Category</label>
                                         <select 
-                                            className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all"
-                                            value={formData.category}
-                                            onChange={e => setFormData({...formData, category: e.target.value})}
+                                            className={`w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all ${errors.category ? 'ring-2 ring-red-400' : ''}`}
+                                            {...register('category')}
                                         >
                                             <option value="ALL">ALL PLATFORM</option>
                                             <option value="FOOD">FOOD_CMD</option>
                                             <option value="PARCEL">PARCEL_CMD</option>
                                             <option value="GROCERY">GROCERY_CMD</option>
                                         </select>
+                                        {errors.category && <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{errors.category.message}</p>}
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Priority</label>
                                         <input 
                                             type="number" 
-                                            className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all"
-                                            value={formData.priority}
-                                            onChange={e => setFormData({...formData, priority: parseInt(e.target.value)})}
+                                            className={`w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 focus:ring-primary/20 transition-all ${errors.priority ? 'ring-2 ring-red-400' : ''}`}
+                                            {...register('priority')}
                                         />
+                                        {errors.priority && <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{errors.priority.message}</p>}
                                     </div>
                                 </div>
                                 <div className="space-y-2">
@@ -222,10 +230,10 @@ export default function BannerManagement() {
                                     <input 
                                         type="text" 
                                         placeholder="SCREEN_RESTAURANT_DETAILS"
-                                        className="w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-primary/20 transition-all"
-                                        value={formData.linkTo}
-                                        onChange={e => setFormData({...formData, linkTo: e.target.value})}
+                                        className={`w-full bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm font-bold placeholder:text-slate-300 focus:ring-2 focus:ring-primary/20 transition-all ${errors.linkTo ? 'ring-2 ring-red-400' : ''}`}
+                                        {...register('linkTo')}
                                     />
+                                    {errors.linkTo && <p className="text-red-500 text-[10px] font-bold mt-1 ml-1">{errors.linkTo.message}</p>}
                                 </div>
                                 <Button className="w-full h-14 bg-primary hover:bg-primary/95 rounded-2xl font-black uppercase text-[10px] tracking-widest italic shadow-xl shadow-primary/25 mt-4 transition-all active:scale-95">
                                     Confirm Payload Injection
@@ -237,7 +245,7 @@ export default function BannerManagement() {
             </AnimatePresence>
 
             {loading && (
-                <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+                <div className="fixed inset-0 z-60 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
                     <RefreshCw className="animate-spin text-primary mb-6" size={64} />
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.5em] animate-pulse italic">Scanning Visual Buffer...</p>
                 </div>

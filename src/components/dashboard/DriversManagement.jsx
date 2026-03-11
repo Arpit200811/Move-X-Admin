@@ -11,6 +11,16 @@ import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { useTranslation } from 'react-i18next';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import toast from 'react-hot-toast';
+
+const driverSchema = yup.object().shape({
+    name: yup.string().required('Driver name is required').min(2, 'Name must be at least 2 characters'),
+    phone: yup.string().required('Phone number is required').min(10, 'Phone must be at least 10 digits'),
+    vehicle: yup.string().required('Vehicle type is required')
+});
 
 // Fix Leaflet's default icon path issues
 delete L.Icon.Default.prototype._getIconUrl;
@@ -32,7 +42,10 @@ export default function DriversManagement({ searchQuery = '' }) {
     const { t } = useTranslation();
     const { users, refreshData } = useOrders();
     const [showOnboardModal, setShowOnboardModal] = useState(false);
-    const [formData, setFormData] = useState({ name: '', phone: '', vehicle: '' });
+    const { register, handleSubmit, formState: { errors }, reset } = useForm({
+        resolver: yupResolver(driverSchema),
+        defaultValues: { name: '', phone: '', vehicle: '' }
+    });
     const [activeTab, setActiveTab] = useState('active'); // 'active' | 'pending'
 
     const allActiveDrivers = users.filter(user => user.role === 'driver' && user.status !== 'pending' && user.status !== 'rejected');
@@ -55,8 +68,9 @@ export default function DriversManagement({ searchQuery = '' }) {
         try {
             await api.patch(`/auth/drivers/${driverId}/approve`, { action: 'approve' });
             refreshData();
+            toast.success(`Driver ${driver?.name} approved!`);
         } catch (err) {
-            alert('Approval Failed');
+            toast.error('Approval Failed: ' + (err.response?.data?.message || err.message));
         }
     };
 
@@ -67,20 +81,21 @@ export default function DriversManagement({ searchQuery = '' }) {
         try {
             await api.patch(`/auth/drivers/${driverId}/approve`, { action: 'reject' });
             refreshData();
+            toast.success(`Driver ${driver?.name} rejected.`);
         } catch (err) {
-            alert(t('error'));
+            toast.error(t('error'));
         }
     };
 
-    const handleOnboardSubmit = async (e) => {
-        e.preventDefault();
+    const handleOnboardSubmit = async (data) => {
         try {
-            await api.post('/auth/register', { ...formData, role: 'driver' });
+            await api.post('/auth/register', { ...data, role: 'driver' });
             setShowOnboardModal(false);
-            setFormData({ name: '', phone: '', vehicle: '' });
+            reset();
             refreshData();
+            toast.success('Driver inducted successfully!');
         } catch (err) {
-            alert(t('error'));
+            toast.error(err.response?.data?.message || t('error'));
         }
     };
 
@@ -317,18 +332,21 @@ export default function DriversManagement({ searchQuery = '' }) {
                                 <h3 className="text-2xl font-black text-slate-900 tracking-tight">{t('manual_induction')}</h3>
                                 <p className="text-slate-500 font-medium mb-8">{t('register_node_desc')}</p>
 
-                                <form className="space-y-4" onSubmit={handleOnboardSubmit}>
+                                <form className="space-y-4" onSubmit={handleSubmit(handleOnboardSubmit)}>
                                     <div>
                                         <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">{t('full_name')}</label>
-                                        <Input required placeholder="Ex: John Doe" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                                        <Input className={`${errors.name ? 'ring-2 ring-red-400' : ''}`} placeholder="Ex: John Doe" {...register('name')} />
+                                        {errors.name && <p className="text-red-500 text-[10px] font-bold mt-1">{errors.name.message}</p>}
                                     </div>
                                     <div>
                                         <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">{t('phone_number')}</label>
-                                        <Input required placeholder="+1 234 567 890" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+                                        <Input className={`${errors.phone ? 'ring-2 ring-red-400' : ''}`} placeholder="+1 234 567 890" {...register('phone')} />
+                                        {errors.phone && <p className="text-red-500 text-[10px] font-bold mt-1">{errors.phone.message}</p>}
                                     </div>
                                     <div>
                                         <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">{t('vehicle_type')}</label>
-                                        <Input required placeholder="Ex: Honda Civic" value={formData.vehicle} onChange={e => setFormData({ ...formData, vehicle: e.target.value })} />
+                                        <Input className={`${errors.vehicle ? 'ring-2 ring-red-400' : ''}`} placeholder="Ex: Honda Civic" {...register('vehicle')} />
+                                        {errors.vehicle && <p className="text-red-500 text-[10px] font-bold mt-1">{errors.vehicle.message}</p>}
                                     </div>
                                     <Button type="submit" className="w-full h-14 rounded-2xl mt-4 font-black uppercase tracking-widest italic">
                                         {t('finalize_reg')}

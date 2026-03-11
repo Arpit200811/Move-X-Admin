@@ -7,6 +7,18 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import toast from 'react-hot-toast';
+
+const partnerSchema = yup.object().shape({
+    name: yup.string().required('Business name is required').min(2, 'Name must be at least 2 characters'),
+    category: yup.string().required('Category is required'),
+    email: yup.string().required('Email is required').email('Valid email is required'),
+    phone: yup.string().required('Phone number is required').min(10, 'Phone must be at least 10 digits'),
+    password: yup.string().required('Password is required').min(6, 'Password must be at least 6 characters')
+});
 
 const icons = {
     Restaurant: <Store size={18} />,
@@ -98,7 +110,10 @@ export default function PartnersPage() {
     const { t } = useTranslation();
     const [showPartnerModal, setShowPartnerModal] = useState(false);
     const [partners, setPartners] = useState([]);
-    const [formData, setFormData] = useState({ name: '', category: 'Restaurant', email: '', phone: '', password: '' });
+    const { register, handleSubmit, formState: { errors }, reset } = useForm({
+        resolver: yupResolver(partnerSchema),
+        defaultValues: { name: '', category: 'Restaurant', email: '', phone: '', password: '' }
+    });
 
     const fetchPartners = async () => {
         try {
@@ -111,14 +126,16 @@ export default function PartnersPage() {
         fetchPartners();
     }, []);
 
-    const handleAddPartner = async (e) => {
-        e.preventDefault();
+    const handleAddPartner = async (data) => {
         try {
-            await api.post('/partners', formData);
+            await api.post('/partners', data);
             setShowPartnerModal(false);
             fetchPartners();
-            setFormData({ name: '', category: 'Restaurant', email: '', phone: '', password: '' });
-        } catch (e) { alert(t('error')); }
+            reset();
+            toast.success('Partner added successfully!');
+        } catch (e) {
+            toast.error(e.response?.data?.message || t('error'));
+        }
     };
 
     const handleDeletePartner = async (id) => {
@@ -127,7 +144,8 @@ export default function PartnersPage() {
         try {
             await api.delete(`/partners/${id}`);
             fetchPartners();
-        } catch (e) { alert(t('error')); }
+            toast.success('Partner deleted successfully');
+        } catch (e) { toast.error(t('error')); }
     };
 
     const grouped = {
@@ -184,7 +202,7 @@ export default function PartnersPage() {
             {/* Onboard Modal */}
             <AnimatePresence>
                 {showPartnerModal && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
                         <motion.div 
                             initial={{ opacity: 0 }} 
                             animate={{ opacity: 1 }} 
@@ -216,19 +234,19 @@ export default function PartnersPage() {
                                     </Button>
                                 </div>
 
-                                <form className="space-y-6" onSubmit={handleAddPartner}>
+                                <form className="space-y-6" onSubmit={handleSubmit(handleAddPartner)}>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('business_name')}</label>
-                                            <Input required className="h-12 rounded-xl bg-slate-50 border-none font-bold text-sm" placeholder="Ex: HealthFirst" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                                            <Input className={`h-12 rounded-xl bg-slate-50 border-none font-bold text-sm ${errors.name ? 'ring-2 ring-red-400' : ''}`} placeholder="Ex: HealthFirst" {...register('name')} />
+                                            {errors.name && <p className="text-red-500 text-[10px] font-bold mt-1 px-1">{errors.name.message}</p>}
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('node_category')}</label>
                                             <div className="relative">
                                                 <select
                                                     className="w-full h-12 bg-slate-50 border-none rounded-xl px-4 text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
-                                                    value={formData.category}
-                                                    onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                                    {...register('category')}
                                                 >
                                                     <option value="Restaurant">{t('culinary')}</option>
                                                     <option value="Pharmacy">{t('medical')}</option>
@@ -237,20 +255,24 @@ export default function PartnersPage() {
                                                 </select>
                                                 <MoreHorizontal size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                                             </div>
+                                            {errors.category && <p className="text-red-500 text-[10px] font-bold mt-1 px-1">{errors.category.message}</p>}
                                         </div>
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('official_comm_node')}</label>
-                                        <Input required type="email" className="h-12 rounded-xl bg-slate-50 border-none font-bold text-sm" placeholder="partner@example.com" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
+                                        <Input type="email" className={`h-12 rounded-xl bg-slate-50 border-none font-bold text-sm ${errors.email ? 'ring-2 ring-red-400' : ''}`} placeholder="partner@example.com" {...register('email')} />
+                                        {errors.email && <p className="text-red-500 text-[10px] font-bold mt-1 px-1">{errors.email.message}</p>}
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('secure_line')}</label>
-                                            <Input required className="h-12 rounded-xl bg-slate-50 border-none font-bold text-sm" placeholder="+91 99887 76655" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+                                            <Input className={`h-12 rounded-xl bg-slate-50 border-none font-bold text-sm ${errors.phone ? 'ring-2 ring-red-400' : ''}`} placeholder="+91 99887 76655" {...register('phone')} />
+                                            {errors.phone && <p className="text-red-500 text-[10px] font-bold mt-1 px-1">{errors.phone.message}</p>}
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{t('access_protocol')}</label>
-                                            <Input required type="password" className="h-12 rounded-xl bg-slate-50 border-none font-bold text-sm" placeholder="••••••••" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
+                                            <Input type="password" className={`h-12 rounded-xl bg-slate-50 border-none font-bold text-sm ${errors.password ? 'ring-2 ring-red-400' : ''}`} placeholder="••••••••" {...register('password')} />
+                                            {errors.password && <p className="text-red-500 text-[10px] font-bold mt-1 px-1">{errors.password.message}</p>}
                                         </div>
                                     </div>
                                     <Button type="submit" className="w-full h-16 rounded-2xl mt-8 font-black uppercase tracking-widest italic shadow-xl shadow-primary/25 text-sm active:scale-[0.98] transition-all">

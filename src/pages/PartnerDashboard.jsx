@@ -93,7 +93,7 @@ const PartnerDashboard = () => {
         fetchEssentialData();
         
         // Live Telemetry Sync
-        const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000');
+        const socket = io(import.meta.env.VITE_SOCKET_URL || 'https://move-x-backend.onrender.com');
         socket.on('driver_location_updated', (data) => {
             setDriverLocations(prev => ({
                 ...prev,
@@ -185,7 +185,7 @@ const PartnerDashboard = () => {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => setMobileMenuOpen(false)}
-                        className="fixed inset-0 z-[100] bg-slate-950/40 backdrop-blur-md md:hidden"
+                        className="fixed inset-0 z-100 bg-slate-950/40 backdrop-blur-md md:hidden"
                     />
                 )}
             </AnimatePresence>
@@ -193,7 +193,7 @@ const PartnerDashboard = () => {
             {/* Main Sidebar */}
             <aside
                 className={`
-                    fixed md:relative z-[110] h-full bg-white border-r border-slate-200 flex flex-col transition-all duration-500 ease-in-out
+                    fixed md:relative z-110 h-full bg-white border-r border-slate-200 flex flex-col transition-all duration-500 ease-in-out
                     ${sidebarCollapsed ? 'w-20' : 'w-72'}
                     ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
                 `}

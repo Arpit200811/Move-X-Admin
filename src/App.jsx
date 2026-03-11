@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import MaintenanceRecalibration from './components/dashboard/MaintenanceRecalibration';
 import PartnerDashboard from './pages/PartnerDashboard';
+import { Toaster } from 'react-hot-toast';
 import './App.css';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -61,6 +62,7 @@ function AppContent() {
 function App() {
   return (
     <OrderProvider>
+      <Toaster position="top-right" />
       <AppContent />
     </OrderProvider>
   );

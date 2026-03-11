@@ -44,7 +44,7 @@ export default function InfrastructureHUD() {
             setTrafficPulse(prev => [...prev.slice(-10), Math.floor(Math.random() * 80) + 20]);
         }, 2000);
 
-        const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000');
+        const socket = io(import.meta.env.VITE_SOCKET_URL || 'https://move-x-backend.onrender.com');
         socket.on('maintenance_status', (data) => {
             setSystemData(prev => ({ ...prev, maintenanceMode: data.enabled }));
         });

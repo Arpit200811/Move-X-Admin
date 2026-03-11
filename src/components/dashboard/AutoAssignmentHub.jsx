@@ -29,7 +29,7 @@ export default function AutoAssignmentHub() {
     const scrollRef = useRef(null);
 
     useEffect(() => {
-        const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000');
+        const socket = io(import.meta.env.VITE_SOCKET_URL || 'https://move-x-backend.onrender.com');
 
         socket.on('dispatch_log', (data) => {
             setLogs(prev => [{

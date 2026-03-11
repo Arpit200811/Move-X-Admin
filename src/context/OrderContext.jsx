@@ -3,7 +3,7 @@ import api from '../services/api';
 import io from 'socket.io-client';
 
 const OrderContext = createContext();
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'https://move-x-backend.onrender.com';
 
 export const ORDER_STATUS = {
   PENDING: 'PENDING',
