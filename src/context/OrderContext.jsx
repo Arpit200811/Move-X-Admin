@@ -48,52 +48,49 @@ export const OrderProvider = ({ children }) => {
   }, []);
 
   const fetchInitialData = async () => {
-    setLoading(true);
-    let currentRole = null;
-    try {
-      // 1. Check System Status (Infrastructure Guard)
-      const sysRes = await api.get('/system/status').catch(() => ({ data: { maintenanceMode: false } }));
-      setIsMaintenance(sysRes.data.maintenanceMode);
+    // If not authenticated, don't block the UI with multiple slow calls
+    const token = localStorage.getItem('movex_token');
+    if (!token) {
+      setLoading(false);
+      setIsAuthenticated(false);
+      return;
+    }
 
-      const token = localStorage.getItem('movex_token');
-      if (token) {
-        const meRes = await api.get('/auth/me').catch(() => ({ data: {} }));
-          const userData = meRes.data?.user || meRes.data || null;
-          // Guard: if userData is null or has no role, clear stale session
-          if (!userData || !userData.role) {
-            console.warn('[IDENTITY] No valid user data from /auth/me. Clearing session.');
-            localStorage.removeItem('movex_token');
-            setCurrentUser(null);
-            setIsAuthenticated(false);
-          } else if (userData.role !== 'admin' && userData.role !== 'partner') {
-            console.warn('[IDENTITY MISMATCH] Unauthorized role detected on Secure Portal. Purging session.');
-            localStorage.removeItem('movex_token');
-            setCurrentUser(null);
-            setIsAuthenticated(false);
-          } else {
-            setCurrentUser(userData);
-            currentRole = userData.role;
-            setIsAuthenticated(true);
-          }
-      } else {
+    try {
+      // 1. Fetch system status and user identity CONCURRENTLY
+      const [sysRes, meRes] = await Promise.all([
+        api.get('/system/status').catch(() => ({ data: { maintenanceMode: false } })),
+        api.get('/auth/me').catch(() => ({ data: {} }))
+      ]);
+
+      setIsMaintenance(sysRes.data?.maintenanceMode || false);
+
+      const userData = meRes.data?.user || meRes.data || null;
+      
+      if (!userData || !userData.role || (userData.role !== 'admin' && userData.role !== 'partner')) {
+        localStorage.removeItem('movex_token');
         setCurrentUser(null);
         setIsAuthenticated(false);
+        setLoading(false);
+        return;
       }
 
-      if (token && currentRole) {
-          // Fetch orders, users, and financial data concurrently
-          const [ordersRes, usersRes] = await Promise.all([
-            api.get('/orders/available').catch(() => ({ data: { orders: [] } })),
-            currentRole === 'admin' 
-              ? api.get('/auth/users').catch(() => ({ data: { users: [] } }))
-              : Promise.resolve({ data: { users: [] } })
-          ]);
-          setOrders(ordersRes.data.orders || []);
-          setUsers(usersRes.data.users || []);
-      }
+      setCurrentUser(userData);
+      setIsAuthenticated(true);
+
+      // 2. Fetch business data concurrently after identity is confirmed
+      const [ordersRes, usersRes] = await Promise.all([
+        api.get('/orders/available').catch(() => ({ data: { orders: [] } })),
+        userData.role === 'admin' 
+          ? api.get('/auth/users').catch(() => ({ data: { users: [] } }))
+          : Promise.resolve({ data: { users: [] } })
+      ]);
+
+      setOrders(ordersRes.data.orders || []);
+      setUsers(usersRes.data.users || []);
 
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Initial Load Failure:', error);
     } finally {
       setLoading(false);
     }

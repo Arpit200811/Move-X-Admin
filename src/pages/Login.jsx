@@ -48,14 +48,12 @@ const Login = () => {
 
             if (result === true) {
                 toast.success(`Access Granted: ${role.toUpperCase()} session active.`);
-                // Small delay to ensure token is saved to localStorage
-                setTimeout(() => {
-                    if (role === 'partner') {
-                        navigate('/partner');
-                    } else {
-                        navigate('/dashboard');
-                    }
-                }, 500);
+                // Instant navigation after token is confirmed
+                if (role === 'partner') {
+                    navigate('/partner');
+                } else {
+                    navigate('/dashboard');
+                }
             } else {
                 const msg = result?.message || `Identity Verification Failed: Access Locked.`;
                 toast.error(msg);
