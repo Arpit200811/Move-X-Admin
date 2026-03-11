@@ -28,14 +28,25 @@ export default function KYCHub() {
     const { users, refreshData } = useOrders();
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
-    const pendingReview = users.filter(u => u.role === 'driver' && u.status === 'pending');
+    useEffect(() => {
+        refreshData();
+    }, []);
+
+    const handleManualRefresh = async () => {
+        setIsRefreshing(true);
+        await refreshData();
+        setTimeout(() => setIsRefreshing(false), 1000);
+    };
+
+    const pendingReview = users ? users.filter(u => u.role === 'driver' && u.status === 'pending') : [];
 
     const handleAction = async (driverId, action) => {
         setLoading(true);
         try {
             await api.patch(`/auth/drivers/${driverId}/approve`, { action });
-            refreshData();
+            await refreshData();
             setSelectedRequest(null);
         } catch (err) {
             console.error("Verification decision failed", err);
@@ -57,10 +68,20 @@ export default function KYCHub() {
                     </div>
                     <p className="text-slate-500 font-medium text-sm ml-1">{t('review_credentials')}</p>
                 </div>
-                <Badge variant="outline" className="w-fit h-9 border-slate-200 bg-white text-slate-600 font-bold px-4 rounded-xl shadow-xs">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse mr-2" />
-                    {pendingReview.length} {t('pending_vanguard')}
-                </Badge>
+                <div className="flex items-center gap-3">
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={handleManualRefresh}
+                        className="h-9 w-9 p-0 rounded-xl hover:bg-white border border-transparent hover:border-slate-200 shadow-xs"
+                    >
+                        <RefreshCw size={16} className={`${isRefreshing ? 'animate-spin text-primary' : 'text-slate-400'}`} />
+                    </Button>
+                    <Badge variant="outline" className="w-fit h-9 border-slate-200 bg-white text-slate-600 font-bold px-4 rounded-xl shadow-xs">
+                        <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse mr-2" />
+                        {pendingReview.length} {t('pending_vanguard')}
+                    </Badge>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
